@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TRNote 界面原型</title>
+<style>
+  /* ============ 全局：扁平化、清新简洁 ============ */
+  :root {
+    --bg: #f4f7f8;            /* 页面底色：浅灰偏青 */
+    --panel: #ffffff;         /* 面板白 */
+    --border: #e5eaee;        /* 细分隔线 */
+    --text: #1f2937;          /* 主文字 */
+    --muted: #7a8699;         /* 次要文字 */
+    --accent: #14b8a6;        /* 主题色：清新青绿 */
+    --accent-soft: #ecfdf9;   /* 主题色浅底 */
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(31,41,55,.05);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body {
+    font-family: "Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size:14px;
+  }
+  button { font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+
+  /* ============ 主界面三部分布局 ============ */
+  .app { display:flex; height:100vh; }
+
+  /* ---- 左：单词本记录列表（3/10）---- */
+  .sidebar {
+    width:30%;                       /* 3/10 页面宽度 */
+    background:var(--panel);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column;
+    min-width:220px;
+  }
+  .sidebar-head {
+    padding:16px 16px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  .sidebar-title { font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .sidebar-count { font-size:12px; color:var(--muted); font-weight:400; margin-top:2px; }
+  .sort-tabs { display:flex; gap:4px; margin-top:10px; }
+  .sort-tabs button {
+    font-size:12px; padding:4px 12px; border-radius:999px;
+    color:var(--muted); border:1px solid var(--border);
+  }
+  .sort-tabs button.active { color:#fff; background:var(--accent); border-color:var(--accent); }
+  .word-list { flex:1; overflow-y:auto; padding:6px 0; }
+  .word-item {
+    padding:10px 16px; cursor:pointer; border-left:3px solid transparent;
+    border-bottom:1px solid #f1f4f6;
+  }
+  .word-item:hover { background:var(--accent-soft); }
+  .word-item.active { background:var(--accent-soft); border-left-color:var(--accent); }
+  .word-item .w { font-weight:600; font-size:14px; }
+  .word-item .s { font-size:12px; color:var(--muted); margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .empty { padding:24px; text-align:center; color:var(--muted); font-size:13px; }
+
+  /* ---- 右：上搜索框 / 下详情 ---- */
+  .main { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .search-bar {
+    display:flex; align-items:center; gap:8px;
+    margin:16px 20px 8px; padding:10px 14px;
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+  }
+  .search-bar input {
+    flex:1; border:none; outline:none; font-size:14px; background:transparent;
+  }
+  .search-bar input::placeholder { color:#b6c0cc; }
+  .clear-btn {
+    width:22px; height:22px; border-radius:50%; color:var(--muted);
+    font-size:14px; line-height:22px; text-align:center;
+  }
+  .clear-btn:hover { background:#eef2f5; color:var(--text); }
+  .search-hint { padding:0 24px; font-size:12px; color:var(--muted); min-height:16px; }
+
+  /* ---- 详情区：参考词典排版 ---- */
+  .detail { flex:1; overflow-y:auto; padding:4px 24px 32px; }
+  .detail-word { font-size:30px; font-weight:700; letter-spacing:.5px; }
+  .detail-phonetic { margin-top:6px; color:var(--muted); font-size:14px; }
+  .detail-phonetic b { color:var(--text); font-weight:600; margin-right:4px; }
+  .block { margin-top:18px; }
+  .block-title { font-size:12px; color:var(--muted); margin-bottom:8px;
+    display:flex; align-items:center; gap:6px; }
+  .block-title::after { content:""; flex:1; height:1px; background:var(--border); }
+  .sense { display:flex; gap:10px; padding:8px 12px; border-radius:8px; }
+  .sense:hover { background:#fafcfd; }
+  .sense .pos {
+    min-width:34px; text-align:center; font-weight:700; color:var(--accent);
+    background:var(--accent-soft); border-radius:6px; height:fit-content; padding:2px 0;
+  }
+  .sense .meaning { line-height:1.7; }
+  .sense .example { margin-top:4px; font-size:12.5px; color:var(--muted); font-style:italic; }
+  .forms-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .form-chip {
+    background:var(--panel); border:1px solid var(--border); border-radius:8px;
+    padding:6px 12px; font-size:12.5px;
+  }
+  .form-chip b { color:var(--muted); font-weight:400; margin-right:6px; }
+  .note-box {
+    margin-top:8px; width:100%; min-height:72px; resize:vertical;
+    border:1px solid var(--border); border-radius:8px; padding:10px 12px;
+    font-family:inherit; font-size:13px; color:var(--text); outline:none; background:var(--panel);
+  }
+  .note-box:focus { border-color:var(--accent); }
+
+  /* ============ Toast（自动消失）============ */
+  .toast-container { position:fixed; right:20px; bottom:20px; display:flex; flex-direction:column; gap:8px; z-index:999; }
+  .toast {
+    background:#1f2937; color:#fff; padding:10px 16px; border-radius:8px;
+    font-size:13px; box-shadow:0 4px 12px rgba(0,0,0,.15);
+    display:flex; align-items:center; gap:10px; animation:slideIn .25s ease;
+  }
+  .toast.success { background:#0f9d8f; }
+  .toast.error { background:#dc4c4c; }
+  .toast .retry { background:rgba(255,255,255,.2); border-radius:6px; padding:3px 10px; font-size:12px; }
+  .toast .retry:hover { background:rgba(255,255,255,.32); }
+  @keyframes slideIn { from { transform:translateY(8px); opacity:0 } to { transform:none; opacity:1 } }
+
+  /* ============ 设置页：独立窗口（模态）============ */
+  .overlay {
+    position:fixed; inset:0; background:rgba(31,41,55,.35);
+    display:none; align-items:center; justify-content:center; z-index:1000;
+  }
+  .overlay.show { display:flex; }
+  .settings {
+    width:480px; max-width:92vw; max-height:86vh; overflow-y:auto;
+    background:#fff; border-radius:14px; padding:20px 24px;
+    box-shadow:0 12px 40px rgba(0,0,0,.18); animation:slideIn .2s ease;
+  }
+  .settings-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .settings-title { font-size:16px; font-weight:700; }
+  .close-btn { width:26px; height:26px; border-radius:50%; color:var(--muted); font-size:16px; }
+  .close-btn:hover { background:#f0f2f5; }
+  .firstrun-banner {
+    background:var(--accent-soft); color:#0b6f66; border:1px solid #99e3d6;
+    border-radius:8px; padding:10px 12px; font-size:13px; margin-bottom:14px; line-height:1.6;
+  }
+  .field { margin-bottom:16px; }
+  .field label { display:block; font-size:13px; color:var(--muted); margin-bottom:6px; }
+  .field input[type=text], .field input[type=password] {
+    width:100%; border:1px solid var(--border); border-radius:8px;
+    padding:9px 12px; font-size:13px; outline:none; background:#fbfcfd;
+  }
+  .field input:focus { border-color:var(--accent); background:#fff; }
+  .row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; }
+  .row .lab { font-size:13px; }
+  .row .desc { font-size:11.5px; color:var(--muted); }
+  /* 开关 */
+  .switch { position:relative; width:38px; height:22px; border-radius:999px; background:#d7dee4; transition:.2s; }
+  .switch.on { background:var(--accent); }
+  .switch::after { content:""; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:.2s; }
+  .switch.on::after { left:18px; }
+  /* 可拖动排序列表 */
+  .drag-list { list-style:none; }
+  .drag-list li {
+    display:flex; align-items:center; gap:10px; background:#fbfcfd;
+    border:1px solid var(--border); border-radius:8px; padding:9px 12px; margin-bottom:6px; cursor:grab;
+  }
+  .drag-list li.dragging { opacity:.5; }
+  .drag-list .grip { color:#b6c0cc; font-size:14px; }
+  .drag-list .name { flex:1; font-size:13px; }
+  .drag-list .badge { font-size:11px; color:var(--muted); }
+  .btn { border-radius:8px; padding:8px 16px; font-size:13px; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { filter:brightness(.95); }
+  .btn-ghost { border:1px solid var(--border); color:var(--text); background:#fff; }
+  .btn-ghost:hover { background:#f6f8f9; }
+  .settings-foot { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid var(--border); }
+  .data-actions { display:flex; gap:8px; }
+  /* 底栏快捷入口 */
+  .footer-actions { position:fixed; left:20px; bottom:16px; display:flex; gap:8px; }
+  .fab {
+    background:var(--panel); border:1px solid var(--border); border-radius:999px;
+    padding:7px 14px; font-size:12px; box-shadow:var(--shadow); color:var(--muted);
+  }
+  .fab:hover { color:var(--accent); border-color:var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ============ 主界面：三部分布局 ============ -->
+<div class="app">
+  <!-- 左：单词本记录列表（3/10） -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-title">📒 生词本 <span class="sidebar-count" id="wordCount"></span></div>
+      <div class="sort-tabs">
+        <button id="sortNew" class="active" onclick="setSort('new')">最新</button>
+        <button id="sortAlpha" onclick="setSort('alpha')">字母</button>
+      </div>
+    </div>
+    <div class="word-list" id="wordList"></div>
+  </aside>
+
+  <!-- 右：上搜索框 / 下详情 -->
+  <main class="main">
+    <div class="search-bar">
+      <!-- 搜索框：筛选已收录 + 翻译收录一体；带清除按钮 -->
+      <span>🔍</span>
+      <input id="searchInput" type="text" placeholder="输入单词 / 释义检索，本地无结果时将走网络查询…"
+             oninput="onSearch(this.value)" />
+      <button class="clear-btn" title="清除" onclick="clearSearch()">✕</button>
+    </div>
+    <div class="search-hint" id="searchHint"></div>
+    <div class="detail" id="detail"></div>
+  </main>
+</div>
+
+<!-- 底栏快捷入口（原型演示用） -->
+<div class="footer-actions">
+  <button class="fab" onclick="openSettings(true)">⚙ 设置</button>
+  <button class="fab" onclick="simulateSave()">✍ 模拟收录新词</button>
+</div>
+
+<!-- ============ Toast 容器 ============ -->
+<div class="toast-container" id="toasts"></div>
+
+<!-- ============ 设置页：独立窗口 ============ -->
+<div class="overlay" id="settingsOverlay">
+  <div class="settings">
+    <div class="settings-head">
+      <span class="settings-title">设置</span>
+      <button class="close-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <!-- 首次使用提示（原型默认展示，演示“第一次使用弹出设置”） -->
+    <div class="firstrun-banner" id="firstrunBanner">
+      🎉 <b>首次使用</b>：请先填写 Git 仓库链接，之后每次收录新词都会自动同步备份到该仓库。<br/>
+      （可点击右上角 ✕ 跳过，稍后到设置中再填。）
+    </div>
+
+    <!-- 仓库链接 -->
+    <div class="field">
+      <label>Git 仓库链接</label>
+      <input id="repoUrl" type="text" placeholder="https://github.com/you/trnote-backup.git"
+             value="https://github.com/you/trnote-backup.git" />
+    </div>
+
+    <!-- 全局快捷键 -->
+    <div class="field">
+      <label>全局快捷键（呼出主界面）</label>
+      <input id="hotkey" type="text" value="Ctrl+Alt+T" />
+    </div>
+
+    <!-- 开关项 -->
+    <div class="row"><div><div class="lab">自动收录</div><div class="desc">搜索完成后自动保存单词</div></div>
+      <div class="switch on" onclick="toggle(this)"></div></div>
+    <div class="row"><div><div class="lab">自动 Git 同步</div><div class="desc">收录新词后自动 commit + push</div></div>
+      <div class="switch on" onclick="toggle(this)"></div></div>
+
+    <!-- 翻译 API 兜底顺序：可拖动排序 -->
+    <div class="field">
+      <label>翻译 API 兜底顺序（拖动排序）</label>
+      <ul class="drag-list" id="apiOrder">
+        <!-- 默认顺序：Google → 有道 → 百度 -->
+        <li draggable="true" data-name="Google 翻译"><span class="grip">⠿</span><span class="name">Google 翻译</span><span class="badge">免费接口 · 优先</span></li>
+        <li draggable="true" data-name="有道翻译"><span class="grip">⠿</span><span class="name">有道翻译</span><span class="badge">免费额度</span></li>
+        <li draggable="true" data-name="百度翻译"><span class="grip">⠿</span><span class="name">百度翻译</span><span class="badge">免费额度</span></li>
+      </ul>
+    </div>
+
+    <!-- 数据管理 -->
+    <div class="field">
+      <label>数据管理</label>
+      <div class="data-actions">
+        <button class="btn btn-ghost" onclick="toast('已导出整库备份 trnote-backup.zip','success')">导出备份</button>
+        <button class="btn btn-ghost" onclick="toast('请选择备份文件进行恢复','info')">导入恢复</button>
+        <button class="btn btn-ghost" onclick="simulateSync()">立即同步</button>
+      </div>
+    </div>
+
+    <div class="field"><label>关于</label><div class="desc">TRNote · Translate & Record · v0.1 原型</div></div>
+
+    <div class="settings-foot">
+      <button class="btn btn-ghost" onclick="closeSettings()">跳过</button>
+      <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 演示数据（模拟已收录的生词，最新在前） ============ */
+const WORDS = [
+  { word:'ephemeral', phonetic:{uk:'/ɪˈfemərəl/',us:'/ɪˈfemərəl/'},
+    senses:[{pos:'adj.',meaning:'短暂的; 瞬息的',example:'Fame in the internet age is ephemeral.'}],
+    forms:[{type:'比较级',value:'—'}], note:'编程里指临时资源（如临时表/一次性任务）。', summary:'短暂的; 瞬息的' },
+  { word:'idempotent', phonetic:{uk:'/ˌaɪdəmˈpoʊtənt/',us:'/ˌaɪdəmˈpoʊtənt/'},
+    senses:[{pos:'adj.',meaning:'幂等的',example:'An idempotent request can be retried safely.'}],
+    forms:[], note:'HTTP 幂等：重复提交结果一致。', summary:'幂等的' },
+  { word:'deadlock', phonetic:{uk:'/ˈdedlɒk/',us:'/ˈdedlɑːk/'},
+    senses:[{pos:'n.',meaning:'死锁; 僵局',example:'Two transactions reached a deadlock.'}],
+    forms:[{type:'复数',value:'deadlocks'}], note:'数据库/并发场景常见。', summary:'死锁; 僵局' },
+  { word:'pragmatic', phonetic:{uk:'/præɡˈmætɪk/',us:'/præɡˈmætɪk/'},
+    senses:[{pos:'adj.',meaning:'务实的; 实用的',example:'A pragmatic approach to refactoring.'}],
+    forms:[{type:'比较级',value:'more pragmatic'}], note:'', summary:'务实的; 实用的' },
+  { word:'concatenate', phonetic:{uk:'/kənˈkætəneɪt/',us:'/kənˈkætəneɪt/'},
+    senses:[{pos:'v.',meaning:'连接; 拼接',example:'Concatenate the two strings.'}],
+    forms:[{type:'过去式',value:'concatenated'},{type:'过去分词',value:'concatenated'},{type:'现在分词',value:'concatenating'}],
+    note:'字符串拼接。', summary:'连接; 拼接' },
+  { word:'action', phonetic:{uk:'/ˈækʃn/',us:'/ˈækʃn/'},
+    senses:[{pos:'n.',meaning:'动作; 行为; 战斗; 处理',example:'Actions speak louder than words.'},
+            {pos:'v.',meaning:'行动; 起作用; 表演',example:''}],
+    forms:[{type:'过去式',value:'acted'},{type:'过去分词',value:'acted'},{type:'现在分词',value:'acting'},{type:'复数',value:'actions'}],
+    note:'编程里常指用户/系统发生的一个操作。', summary:'动作; 行为; 战斗; 处理' },
+  { word:'ubiquitous', phonetic:{uk:'/juːˈbɪkwɪtəs/',us:'/juːˈbɪkwɪtəs/'},
+    senses:[{pos:'adj.',meaning:'无处不在的',example:'Smartphones are ubiquitous.'}],
+    forms:[], note:'', summary:'无处不在的' },
+  { word:'polymorphism', phonetic:{uk:'/ˌpɒliˈmɔːfɪzəm/',us:'/ˌpɑːliˈmɔːrfɪzəm/'},
+    senses:[{pos:'n.',meaning:'多态性; 多形性',example:'Polymorphism is a core OOP concept.'}],
+    forms:[], note:'面向对象三特性之一。', summary:'多态性; 多形性' },
+];
+
+let sortMode = 'new';      // 排序方式：new(最新) / alpha(字母)
+let activeWord = null;     // 当前选中的单词
+
+/* ============ 渲染：左侧单词列表 ============ */
+function renderList(filter='') {
+  let list = [...WORDS];
+  // 按排序方式
+  if (sortMode === 'alpha') list.sort((a,b) => a.word.localeCompare(b.word));
+  // 过滤：匹配单词或释义（原型简单演示）
+  if (filter) {
+    const f = filter.toLowerCase();
+    list = list.filter(w => w.word.toLowerCase().includes(f)
+      || w.summary.toLowerCase().includes(f)
+      || w.senses.some(s => s.meaning.toLowerCase().includes(f)));
+  }
+  document.getElementById('wordCount').textContent = `· ${WORDS.length} 词`;
+
+  const box = document.getElementById('wordList');
+  if (!list.length) {
+    box.innerHTML = '<div class="empty">未找到匹配的生词</div>';
+    return;
+  }
+  box.innerHTML = list.map(w => `
+    <div class="word-item ${w.word===activeWord?'active':''}" onclick="selectWord('${w.word}')">
+      <div class="w">${w.word}</div>
+      <div class="s">${w.summary}</div>
+    </div>`).join('');
+}
+
+/* ============ 选择单词 → 右侧展示详情 ============ */
+function selectWord(word) {
+  activeWord = word;
+  const w = WORDS.find(x => x.word === word);
+  if (!w) return;
+  renderList(document.getElementById('searchInput').value);
+
+  // 详情区：参考词典排版（单词+音标 → 词性分区块 → 词形 → 备注）
+  const posHtml = w.senses.map(s => `
+    <div class="sense">
+      <div class="pos">${s.pos}</div>
+      <div class="meaning">
+        ${s.meaning}
+        ${s.example ? `<div class="example">“${s.example}”</div>` : ''}
+      </div>
+    </div>`).join('');
+  const formsHtml = w.forms.length
+    ? w.forms.map(f => `<span class="form-chip"><b>${f.type}</b>${f.value}</span>`).join('')
+    : '<span style="color:#b6c0cc;font-size:12.5px">（无词形变化）</span>';
+
+  document.getElementById('detail').innerHTML = `
+    <div class="detail-word">${w.word}</div>
+    <div class="detail-phonetic">
+      <span>英 <b>${w.phonetic.uk}</b></span>
+      <span style="margin-left:14px">美 <b>${w.phonetic.us}</b></span>
+    </div>
+    <div class="block"><div class="block-title">释义</div>${posHtml}</div>
+    <div class="block"><div class="block-title">词形变化</div><div class="forms-grid">${formsHtml}</div></div>
+    <div class="block"><div class="block-title">备注</div>
+      <textarea class="note-box" placeholder="添加个人备注…">${w.note||''}</textarea>
+    </div>`;
+}
+
+/* ============ 搜索 / 清除 ============ */
+function onSearch(v) {
+  renderList(v);
+  const hint = document.getElementById('searchHint');
+  const exact = WORDS.find(w => w.word.toLowerCase() === v.trim().toLowerCase());
+  if (v.trim() && !exact) {
+    // 本地词库/生词本无该词 → 提示将走网络查询（原型演示）
+    hint.textContent = `本地未命中 “${v.trim()}”，将走网络翻译并收录。`;
+  } else {
+    hint.textContent = '';
+  }
+}
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  onSearch('');
+}
+
+/* ============ 排序切换 ============ */
+function setSort(mode) {
+  sortMode = mode;
+  document.getElementById('sortNew').classList.toggle('active', mode==='new');
+  document.getElementById('sortAlpha').classList.toggle('active', mode==='alpha');
+  renderList(document.getElementById('searchInput').value);
+}
+
+/* ============ Toast：自动消失（可带重试） ============ */
+function toast(msg, type='info', withRetry=false) {
+  const box = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type==='info'?'':type}`;
+  el.innerHTML = msg + (withRetry ? '<button class="retry" onclick="simulateSync()">重试</button>' : '');
+  box.appendChild(el);
+  setTimeout(() => { el.style.opacity=0; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 2600);
+}
+
+/* ============ 设置页 ============ */
+function openSettings(firstRun=false) {
+  // 首次使用：显示引导横幅（原型默认开启以演示“第一次使用弹出设置”）
+  document.getElementById('firstrunBanner').style.display = firstRun ? 'block' : 'none';
+  document.getElementById('settingsOverlay').classList.add('show');
+}
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('show'); }
+function saveSettings() {
+  closeSettings();
+  toast('设置已保存 ✓','success');
+  // 保存仓库链接后，引导提示消失
+  document.getElementById('firstrunBanner').style.display = 'none';
+}
+function toggle(el) { el.classList.toggle('on'); }
+
+/* ---- API 兜底顺序：拖动排序 ---- */
+(function initDrag(){
+  const list = document.getElementById('apiOrder');
+  let dragging = null;
+  list.addEventListener('dragstart', e => {
+    dragging = e.target;
+    e.target.classList.add('dragging');
+  });
+  list.addEventListener('dragend', e => { e.target.classList.remove('dragging'); });
+  list.addEventListener('dragover', e => {
+    e.preventDefault();
+    const after = [...list.querySelectorAll('li:not(.dragging)')].find(li =>
+      e.clientY < li.getBoundingClientRect().top + li.offsetHeight/2);
+    list.insertBefore(dragging, after);
+  });
+})();
+
+/* ============ 原型演示动作 ============ */
+// 模拟：收录新词 → 自动 Git 同步 → Toast 提示
+function simulateSave() {
+  toast('已收录新词 <b>transaction</b> ✓','success');
+  setTimeout(() => simulateSync(), 400);
+}
+function simulateSync() {
+  toast('已自动同步到 Git（提交成功）','success');
+}
+function simulateSyncFail() {
+  toast('Git 同步失败：网络不可用','error',true);
+}
+
+/* ============ 启动：默认打开最新单词；首次使用默认弹出设置 ============ */
+selectWord('action');
+openSettings(true);   // 原型演示“第一次使用默认弹出设置界面”
+</script>
+</body>
+</html>

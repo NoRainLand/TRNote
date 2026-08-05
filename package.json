@@ -12,6 +12,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
     "build:win": "electron-vite build && electron-builder --win",
+    "build:installer": "set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/&& electron-builder --win nsis",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
@@ -41,6 +42,9 @@
       "out/**/*",
       "resources/**/*"
     ],
+    "compression": "maximum",
+    "afterPack": "scripts/after-pack.js",
+    "publish": null,
     "win": {
       "target": [
         {
@@ -49,6 +53,12 @@
         }
       ],
       "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true
     }
   },
   "pnpm": {

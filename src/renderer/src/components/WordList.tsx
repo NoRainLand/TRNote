@@ -14,9 +14,11 @@ interface Props {
   listRef: RefObject<HTMLDivElement>
   /** 按 → 时请求聚焦右侧搜索框 */
   onMoveRight: () => void
+  /** 列表获得焦点时通知 App（用于切换左右栏比例） */
+  onFocusList: () => void
 }
 
-export default function WordList({ words, active, onSelect, listRef, onMoveRight }: Props) {
+export default function WordList({ words, active, onSelect, listRef, onMoveRight, onFocusList }: Props) {
   // 选中变化时，把高亮项滚动到可视区域（键盘/鼠标均生效）
   useEffect(() => {
     if (!active || !listRef.current) return
@@ -50,13 +52,25 @@ export default function WordList({ words, active, onSelect, listRef, onMoveRight
 
   if (words.length === 0) {
     return (
-      <div className="word-list" ref={listRef} tabIndex={0} onKeyDown={handleKeyDown}>
+      <div
+        className="word-list"
+        ref={listRef}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onFocus={onFocusList}
+      >
         <div className="empty">还没有生词，去搜索框查一个吧～</div>
       </div>
     )
   }
   return (
-    <div className="word-list" ref={listRef} tabIndex={0} onKeyDown={handleKeyDown}>
+    <div
+      className="word-list"
+      ref={listRef}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onFocus={onFocusList}
+    >
       {words.map((w) => (
         <div
           key={w.word}

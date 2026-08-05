@@ -151,6 +151,32 @@ export default function SettingsWindow({
         </div>
 
         <div className="field">
+          <label>方向键 & 快捷键说明</label>
+          <div className="key-help">
+            <div className="key-row">
+              <span className="keys"><kbd>←</kbd></span>
+              <span>搜索框 → 左侧词本</span>
+            </div>
+            <div className="key-row">
+              <span className="keys"><kbd>→</kbd></span>
+              <span>左侧词本 → 搜索框</span>
+            </div>
+            <div className="key-row">
+              <span className="keys"><kbd>↑</kbd><kbd>↓</kbd></span>
+              <span>输入框为空：切到词本切换单词；有内容：选择联想项</span>
+            </div>
+            <div className="key-row">
+              <span className="keys"><kbd>Enter</kbd></span>
+              <span>确认收录 / 选择高亮联想</span>
+            </div>
+            <div className="key-row">
+              <span className="keys"><kbd>ESC</kbd></span>
+              <span>收起主窗口（弹窗 / 确认框打开时先关闭它们）</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="field">
           <label>数据管理</label>
           <div className="data-actions">
             <button className="btn btn-ghost" onClick={onExport}>

@@ -11,7 +11,7 @@
 
 - **查词即收录**：输入单词 → 本地词库实时联想 → 停顿后本地无结果自动走网络翻译 → 自动保存
 - **词典式详情**：音标（英/美）+ 多词性释义（`;` 分隔）+ 词形变化（过去式/复数/比较级…）+ 例句 + 备注
-- **三栏主界面**：左列表（最新/字母排序）+ 右上搜索框 + 右下详情（默认最新单词）
+- **两栏主界面**：左列表（最新添加 / 字母顺序排序）+ 右侧上搜索框 / 下详情（默认打开最新单词）
 - **全局快捷键**：默认 `Ctrl+Alt+T` 呼出主界面（可在设置中自定义）
 - **系统托盘**：左键→主界面；右键→主界面 / 设置 / 退出；关闭窗口隐藏到托盘
 - **自动 Git 同步**：收录新词后自动 commit + push（失败可重试）
@@ -20,13 +20,32 @@
 
 ---
 
+## ⌨️ 键盘快捷键
+
+| 按键 | 功能 |
+|------|------|
+| `Ctrl+Alt+T` | 呼出 / 收起主窗口（全局，可在设置中自定义） |
+| `ESC` | 收起主窗口（设置 / 删除确认打开时先关闭它们） |
+| `↑` / `↓` | 输入框为空：切到左侧词本并切换单词；输入框有内容：在联想下拉中选择 |
+| `←` | 搜索框 → 左侧词本 |
+| `→` | 左侧词本 → 搜索框 |
+| `Enter` | 确认收录当前输入 / 选择高亮联想词 |
+
+---
+
 ## 🚀 快速开始
 
 ### 1. 首次运行
 
-1. 双击 `TRNote.exe`（或运行安装包）
-2. **首次启动会自动弹出设置窗口**，填写 Git 仓库链接（如 `https://github.com/you/trnote-backup.git`）
-3. 之后每次收录新词，都会自动 `git commit + push` 备份到该仓库
+**方式一：绿色免安装版**（日常使用推荐）
+- 直接运行 `release/win-unpacked/TRNote.exe`，免安装、即拷即用
+
+**方式二：安装包**
+- 运行 `release/TRNote Setup *.exe`，弹出**安装向导**让你自选安装目录（不会静默安装），装好后从开始菜单启动
+
+首次启动流程：
+1. **自动弹出设置窗口**，填写 Git 仓库链接（如 `https://github.com/you/trnote-backup.git`）
+2. 之后每次收录新词，都会自动 `git commit + push` 备份到该仓库
 
 > 数据文件位置：`%APPDATA%\TRNote\trnote.db`
 > 该目录本身就是一个 git 仓库，数据库文件会同步到你的远程仓库。
@@ -53,10 +72,12 @@
 ## 🛠 开发
 
 ```bash
-pnpm install        # 安装依赖
-pnpm tauri dev      # 开发模式（热更新 + 自动重编译 Rust）
-pnpm tauri build    # 打包 exe（产物在 src-tauri/target/release/bundle）
-pnpm build          # 仅构建前端（tsc 类型检查 + vite）
+pnpm install        # 安装依赖（postinstall 重建 better-sqlite3 原生模块）
+pnpm dev            # 开发模式（electron-vite dev，热更新）
+pnpm build          # 构建 out/（main + preload + renderer）
+pnpm typecheck      # TS 类型检查
+pnpm build:win      # 打包绿色目录 → release/win-unpacked/TRNote.exe
+pnpm build:installer # 打包 NSIS 安装包 → release/TRNote Setup *.exe
 ```
 
 ### 技术栈
@@ -95,12 +116,13 @@ src/renderer/             # React 前端
 ### 构建命令
 
 ```bash
-pnpm install         # 安装依赖（postinstall 会重建 better-sqlite3）
-pnpm dev             # 开发模式（electron-vite dev，热更新）
-pnpm build           # 构建 out/（main + preload + renderer）
-pnpm typecheck       # TS 类型检查
-pnpm start           # 预览构建产物
-pnpm build:win       # 打包 exe（electron-builder，产物在 release/）
+pnpm install          # 安装依赖（postinstall 重建 better-sqlite3）
+pnpm dev              # 开发模式（electron-vite dev，热更新）
+pnpm build            # 构建 out/（main + preload + renderer）
+pnpm typecheck        # TS 类型检查
+pnpm start            # 预览构建产物
+pnpm build:win        # 打包绿色目录 → release/win-unpacked/TRNote.exe
+pnpm build:installer  # 打包 NSIS 安装包 → release/TRNote Setup *.exe（安装向导自选目录，内置镜像）
 ```
 
 ---

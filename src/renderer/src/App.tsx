@@ -36,6 +36,8 @@ export default function App() {
   const [pendingDelete, setPendingDelete] = useState<string | null>(null)
   // 窗口可见时播放淡入动画（每次呼出重新触发，见下方 visibilitychange）
   const [appFade, setAppFade] = useState(false)
+  // 当前焦点所在侧：决定左右栏比例（左=词本更大，右=详情更大）
+  const [focusSide, setFocusSide] = useState<'left' | 'right'>('right')
 
   // 引用（避免闭包陈旧值）
   const queryRef = useRef('')
@@ -72,6 +74,21 @@ export default function App() {
     const d = await api.getWord(word)
     if (d) setDetail(d)
   }, [])
+
+  /** 输入框为空时，↑/↓ 视为切到左侧词本并移动选中（直接操作词本列表） */
+  const moveListSelection = useCallback(
+    (dir: 1 | -1) => {
+      if (words.length === 0) return
+      const idx = words.findIndex((w) => w.word === active)
+      const next =
+        dir === 1
+          ? words[(idx + 1) % words.length].word
+          : words[(idx - 1 + words.length) % words.length].word
+      void selectWord(next)
+      wordListRef.current?.focus()
+    },
+    [words, active, selectWord, wordListRef]
+  )
 
   // ---------- 挂载：加载设置、订阅事件、拉取列表 ----------
   useEffect(() => {
@@ -265,7 +282,11 @@ export default function App() {
 
   // ---------- 渲染 ----------
   return (
-    <div className={`app${appFade ? ' fade-in' : ''}`}>
+    <div
+      className={`app${appFade ? ' fade-in' : ''}${
+        focusSide === 'left' ? ' focus-left' : ' focus-right'
+      }`}
+    >
       {/* 窗体顶部拖动条（无边框圆角窗口） */}
       <div className="drag-strip" />
       {/* 左：单词本记录列表（3/10） */}
@@ -275,19 +296,22 @@ export default function App() {
             📒 生词本
             <span className="sidebar-count">· {words.length} 词</span>
           </div>
-          <div className="sort-tabs">
-            <button
-              className={sort === 'new' ? 'active' : ''}
-              onClick={() => changeSort('new')}
-            >
-              最新
-            </button>
-            <button
-              className={sort === 'alpha' ? 'active' : ''}
-              onClick={() => changeSort('alpha')}
-            >
-              字母
-            </button>
+          <div className="sort-row">
+            <span className="sort-label">排序</span>
+            <div className="sort-tabs">
+              <button
+                className={sort === 'new' ? 'active' : ''}
+                onClick={() => changeSort('new')}
+              >
+                最新添加
+              </button>
+              <button
+                className={sort === 'alpha' ? 'active' : ''}
+                onClick={() => changeSort('alpha')}
+              >
+                字母顺序
+              </button>
+            </div>
           </div>
         </div>
         <WordList
@@ -296,6 +320,7 @@ export default function App() {
           onSelect={selectWord}
           listRef={wordListRef}
           onMoveRight={() => inputRef.current?.focus()}
+          onFocusList={() => setFocusSide('left')}
         />
       </aside>
 
@@ -310,8 +335,13 @@ export default function App() {
               placeholder="输入单词 / 释义检索，本地无结果时将走网络查询…"
               value={query}
               onChange={(e) => onSearchChange(e.target.value)}
+              onFocus={() => setFocusSide('right')}
               onKeyDown={(e) => {
-                if (e.key === 'ArrowDown') {
+                if (!query.trim() && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                  // 输入框为空：↑/↓ 视为切到左侧词本并移动选中
+                  e.preventDefault()
+                  moveListSelection(e.key === 'ArrowDown' ? 1 : -1)
+                } else if (e.key === 'ArrowDown') {
                   // 下拉联想：向下选择（循环）
                   e.preventDefault()
                   if (suggests.length > 0)

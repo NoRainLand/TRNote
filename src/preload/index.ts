@@ -1,7 +1,7 @@
 // 预加载脚本：通过 contextBridge 安全暴露主进程 API 给渲染进程
 import { contextBridge, ipcRenderer } from 'electron'
 import type { Api } from '@shared/api'
-import type { Settings, ToastPayload } from '@shared/types'
+import type { DictProgress, Settings, ToastPayload } from '@shared/types'
 
 const api: Api = {
   listWords: (sort) => ipcRenderer.invoke('list_words', sort),
@@ -18,6 +18,15 @@ const api: Api = {
   exportBackup: () => ipcRenderer.invoke('export_backup'),
   importBackup: () => ipcRenderer.invoke('import_backup'),
   hideWindow: () => ipcRenderer.invoke('hide_window'),
+  dictStatus: () => ipcRenderer.invoke('dict_status'),
+  downloadDict: () => ipcRenderer.invoke('download_dict'),
+  openDictFolder: () => ipcRenderer.invoke('open_dict_folder'),
+  deleteDict: () => ipcRenderer.invoke('delete_dict'),
+  onDictProgress: (cb: (p: DictProgress) => void) => {
+    const listener = (_e: unknown, p: DictProgress): void => cb(p)
+    ipcRenderer.on('dict-progress', listener)
+    return () => ipcRenderer.removeListener('dict-progress', listener)
+  },
 
   onToast: (cb: (p: ToastPayload) => void) => {
     const listener = (_e: unknown, payload: ToastPayload): void => cb(payload)

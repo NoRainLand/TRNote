@@ -47,11 +47,18 @@ textarea {
 
 /* ============ 主界面三部分布局 ============ */
 .app {
+  position: relative; /* 作为弹窗遮罩的定位基准（遮罩只覆盖主体，不含阴影边） */
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 28px); /* 四周留 14px 透明边，容纳卡片阴影 */
+  margin: 14px;
   background: var(--bg); /* 窗体底色：由 .app 承载，四角露出透明形成圆角 */
-  border-radius: 14px; /* 窗体圆角 */
+  border-radius: 14px; /* 窗体圆角：阴影沿此圆角渲染（柔和圆角投影） */
   overflow: hidden; /* 内容跟随圆角裁剪 */
+  /* 半透明阴影（约为原先的 1/3）：轻量悬浮体积感，避免与白色/浅色背景混为一体 */
+  box-shadow:
+    0 1px 2px rgba(31, 41, 55, 0.05),
+    0 3px 8px rgba(31, 41, 55, 0.06),
+    0 8px 20px rgba(31, 41, 55, 0.08);
 }
 
 /* 呼出淡入动画：每次窗口显示时（App.tsx 监听 visibilitychange）重新触发 */
@@ -528,8 +535,9 @@ textarea {
 }
 
 /* ============ 设置页：独立窗口（模态） ============ */
+/* 半透明遮罩：相对 .app 定位（absolute），只盖住主体、不盖阴影边，并随圆角裁剪 */
 .overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(31, 41, 55, 0.35);
   display: none;
@@ -546,12 +554,14 @@ textarea {
   width: 480px;
   max-width: 92vw;
   max-height: 86vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 14px;
-  padding: 20px 24px;
+  padding: 20px 24px 16px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
   animation: slideIn 0.2s ease;
+  overflow: hidden;
 }
 
 .settings-head {
@@ -559,6 +569,38 @@ textarea {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+/* 设置内容滚动区：仅这里滚动，标题栏固定（底部已无按钮） */
+.settings-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* 界面语言单选框 */
+.lang-options {
+  display: flex;
+  gap: 20px;
+  padding: 2px 0;
+}
+.lang-options .radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.lang-options input[type='radio'] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .settings-title {
@@ -601,7 +643,8 @@ textarea {
 }
 
 .field input[type="text"],
-.field input[type="password"] {
+.field input[type="password"],
+.field select {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -727,8 +770,8 @@ textarea {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 18px;
-  padding-top: 14px;
+  flex-shrink: 0;
+  padding: 14px 0 20px;
   border-top: 1px solid var(--border);
 }
 
@@ -775,11 +818,67 @@ kbd {
   white-space: nowrap;
 }
 
+/* 本地词库下载进度 */
+.dict-status {
+  margin-bottom: 8px;
+}
+
+.dl-progress {
+  margin-top: 10px;
+}
+
+.dl-bar {
+  height: 8px;
+  background: #eef2f5;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dl-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.dl-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 危险操作按钮 */
+.btn.danger {
+  color: var(--danger);
+  border-color: #f3c3c3;
+}
+
+.btn.danger:hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.btn-danger:hover {
+  filter: brightness(0.94);
+}
+
 /* 底栏快捷入口 */
 .footer-actions {
   position: fixed;
-  left: 20px;
-  bottom: 16px;
+  left: 28px; /* 距左缘约 14px（卡片左侧有 14px 阴影透明边），略右移 */
+  bottom: 30px; /* 距卡片底约 16px（卡片底部有 14px 阴影透明边），避免贴底 */
   display: flex;
   gap: 8px;
 }

@@ -1,6 +1,6 @@
 {
   "name": "trnote",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "TRNote - 个人英语生词本 (Translate & Record)",
   "main": "./out/main/index.js",
   "private": true,

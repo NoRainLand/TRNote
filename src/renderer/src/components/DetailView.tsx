@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import type { WordDetail } from '../types'
+import { useT } from '../i18n'
 
 interface Props {
   detail: WordDetail | null
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function DetailView({ detail, onUpdateNote, onRequestDelete }: Props) {
+  const t = useT()
   // 备注本地编辑状态（切换词条时重置）
   const [note, setNote] = useState(detail?.note ?? '')
   useEffect(() => {
@@ -21,7 +23,7 @@ export default function DetailView({ detail, onUpdateNote, onRequestDelete }: Pr
     return (
       <div className="detail">
         <div className="empty" style={{ marginTop: 60 }}>
-          在左侧选择单词，或在搜索框输入新词
+          {t('emptyDetail')}
         </div>
       </div>
     )
@@ -29,7 +31,7 @@ export default function DetailView({ detail, onUpdateNote, onRequestDelete }: Pr
 
   const posHtml = detail.senses.map((s, i) => (
     <div className="sense" key={i}>
-      <div className="pos">{s.pos || '释义'}</div>
+      <div className="pos">{s.pos || t('senseDefault')}</div>
       <div className="meaning">
         {s.meaning}
         {s.example ? <div className="example">“{s.example}”</div> : null}
@@ -46,7 +48,7 @@ export default function DetailView({ detail, onUpdateNote, onRequestDelete }: Pr
         </span>
       ))
     ) : (
-      <span style={{ color: '#b6c0cc', fontSize: '12.5px' }}>（无词形变化）</span>
+      <span style={{ color: '#b6c0cc', fontSize: '12.5px' }}>{t('noForms')}</span>
     )
 
   return (
@@ -56,39 +58,39 @@ export default function DetailView({ detail, onUpdateNote, onRequestDelete }: Pr
           <div className="detail-word">{detail.word}</div>
           <div className="detail-phonetic">
             <span>
-              英 <b>{detail.phoneticUk ?? '—'}</b>
+              {t('uk')} <b>{detail.phoneticUk ?? '—'}</b>
             </span>
             <span style={{ marginLeft: 14 }}>
-              美 <b>{detail.phoneticUs ?? '—'}</b>
+              {t('us')} <b>{detail.phoneticUs ?? '—'}</b>
             </span>
           </div>
         </div>
         <div className="detail-actions">
           <button
             className="delete-btn"
-            title="删除该词条"
+            title={t('deleteEntryTitle')}
             onClick={() => onRequestDelete(detail.word)}
           >
-            🗑 删除
+            {t('deleteEntry')}
           </button>
         </div>
       </div>
 
       <div className="block">
-        <div className="block-title">释义</div>
+        <div className="block-title">{t('senses')}</div>
         {posHtml}
       </div>
 
       <div className="block">
-        <div className="block-title">词形变化</div>
+        <div className="block-title">{t('forms')}</div>
         <div className="forms-grid">{formsHtml}</div>
       </div>
 
       <div className="block">
-        <div className="block-title">备注</div>
+        <div className="block-title">{t('note')}</div>
         <textarea
           className="note-box"
-          placeholder="添加个人备注…"
+          placeholder={t('notePlaceholder')}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           onBlur={() => {

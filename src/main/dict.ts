@@ -7,7 +7,7 @@
 import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { existsSync } from 'fs'
-import { join } from 'path'
+import { dirname, join } from 'path'
 import type { Sense, Suggestion, WordForm } from '@shared/types'
 
 /** 词典查询结果（音标 + 多词性释义 + 词形变化） */
@@ -79,6 +79,16 @@ class Dict {
     }
   }
 
+  /** 关闭底层连接（覆盖安装新词库前调用） */
+  close(): void {
+    try {
+      this.conn?.close()
+    } catch {
+      /* 忽略 */
+    }
+    this.conn = null
+  }
+
   /** 前缀联想（输入即出） */
   suggest(prefix: string, limit: number): Suggestion[] {
     const q = prefix.trim().toLowerCase()
@@ -139,15 +149,32 @@ class Dict {
 
 let dict: Dict | null = null
 
-/** 初始化词典（在 app ready 时调用） */
-export function initDict(dataDir: string): void {
-  dict = new Dict(dataDir)
+/** 词库存放目录：安装目录（exe 旁，便携）；开发模式回退用户目录 */
+export function dictDataDir(): string {
+  return app.isPackaged ? dirname(app.getPath('exe')) : app.getPath('userData')
 }
 
-/** 获取词典（未初始化则用 userData 懒加载） */
+/** 初始化词典（在 app ready 时调用） */
+export function initDict(): void {
+  dict = new Dict(dictDataDir())
+}
+
+/** 获取词典（未初始化则懒加载） */
 export function getDict(): Dict {
-  if (!dict) dict = new Dict(app.getPath('userData'))
+  if (!dict) dict = new Dict(dictDataDir())
   return dict
+}
+
+/** 关闭当前词典连接（覆盖安装新词库前调用，避免 Windows 文件占用） */
+export function closeDict(): void {
+  dict?.close()
+  dict = null
+}
+
+/** 重新加载词典（下载安装新词库后调用，无需重启应用） */
+export function reloadDict(): void {
+  closeDict()
+  dict = new Dict(dictDataDir())
 }
 
 /* ---------- 解析工具 ---------- */

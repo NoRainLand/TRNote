@@ -2,16 +2,16 @@
 // 装配：数据库/词典 → IPC → 主窗口 → 系统托盘 → 全局快捷键
 // 行为：关闭窗口隐藏到托盘（不退出）；托盘左键/快捷键呼出主界面
 
-import { app, BrowserWindow, Menu, nativeImage, Tray } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import trayIcon from '../../resources/icon.png?asset'
 import * as db from './db'
 import { initDict } from './dict'
 import { applyHotkey } from './hotkey'
 import { registerIpc } from './ipc'
+import { createTray } from './tray'
 import { getMainWindow, setMainWindow, showMain } from './window'
 
-let tray: Tray | null = null
 let quitting = false
 
 /** 创建主窗口 */
@@ -58,41 +58,13 @@ function createWindow(): void {
   }
 }
 
-/** 系统托盘：左键单击→主界面；右键菜单→主界面/设置/退出 */
-function createTray(): void {
-  const icon = nativeImage.createFromPath(trayIcon)
-  tray = new Tray(icon)
-  tray.setToolTip('TRNote 生词本')
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      { label: '主界面', click: () => showMain() },
-      {
-        label: '设置',
-        click: () => {
-          showMain()
-          getMainWindow()?.webContents.send('open-settings')
-        }
-      },
-      { type: 'separator' },
-      {
-        label: '退出',
-        click: () => {
-          quitting = true
-          app.quit()
-        }
-      }
-    ])
-  )
-  tray.on('click', () => showMain()) // 左键单击 → 主界面
-}
-
 // 透明窗口在部分 GPU/驱动上会导致渲染进程崩溃，这里统一禁用硬件加速（本应用 UI 简单，软件渲染足够）
 app.disableHardwareAcceleration()
 
 app.whenReady().then(() => {
   // 1. 初始化数据层与词典
   db.getDb()
-  initDict(app.getPath('userData'))
+  initDict()
   // 2. 注册 IPC
   registerIpc()
   // 3. 窗口与托盘

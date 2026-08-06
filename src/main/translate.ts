@@ -3,6 +3,8 @@
 
 import type { Sense } from '@shared/types'
 import type { DictResult } from './dict'
+import { makeT } from '@shared/i18n'
+import * as db from './db'
 
 const UA = { 'User-Agent': 'Mozilla/5.0' }
 const TIMEOUT_MS = 6000
@@ -88,5 +90,5 @@ export async function lookupOnline(word: string, order: string[]): Promise<DictR
       /* 尝试下一个接口 */
     }
   }
-  throw new Error('所有翻译接口均不可用，请检查网络或稍后重试')
+  throw new Error(makeT(db.loadSettings().lang)('errAllFail'))
 }

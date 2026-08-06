@@ -40,12 +40,18 @@ export interface Suggestion {
 }
 
 /** 应用设置 */
+import type { Lang } from './i18n'
+
 export interface Settings {
   repoUrl?: string | null
   hotkey: string
   autoSave: boolean
   autoSync: boolean
   apiOrder: string[]
+  /** 删除单词前是否弹出确认面板（默认关闭：直接删除） */
+  confirmDelete: boolean
+  /** 界面语言（默认中文） */
+  lang: Lang
 }
 
 /** 收录结果 */
@@ -71,4 +77,26 @@ export interface ToastPayload {
 /** 渲染进程内的 Toast 项 */
 export interface ToastItem extends ToastPayload {
   id: number
+}
+
+/** 本地完整词库（ECDICT）状态 */
+export interface DictStatus {
+  installed: boolean
+  sizeBytes: number
+  wordCount: number | null
+}
+
+/** 词库下载进度（主进程推送） */
+export interface DictProgress {
+  phase: 'connecting' | 'downloading' | 'extracting' | 'done' | 'error'
+  percent: number
+  receivedMB: number
+  totalMB: number
+  message?: string
+}
+
+/** 词库下载结果 */
+export interface DictDownloadResult {
+  ok: boolean
+  message: string
 }

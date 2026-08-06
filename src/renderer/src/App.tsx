@@ -2,12 +2,14 @@
 // 左列表(3/10) + 右上搜索框 + 右下详情
 // 交互：输入即联想（本地词库）→ 停顿后本地无结果走网络 → 确认后自动收录
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, onOpenSettings, onToast } from './api'
+import { makeT } from '@shared/i18n'
 import DetailView from './components/DetailView'
 import SettingsWindow from './components/SettingsWindow'
 import ToastView from './components/ToastView'
 import WordList from './components/WordList'
+import { I18nProvider } from './i18n'
 import type {
   SaveResult,
   Settings,
@@ -47,6 +49,10 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement>(null)
   // 左侧单词本容器 ref（←/→ 切换焦点用）
   const wordListRef = useRef<HTMLDivElement>(null)
+
+  // 当前界面语言（跟随设置；切换后自动全局刷新）
+  const lang = settings?.lang ?? 'zh'
+  const t = useMemo(() => makeT(lang), [lang])
 
   // ---------- 工具函数 ----------
   const pushToast = useCallback((p: ToastPayload) => {
@@ -200,7 +206,7 @@ export default function App() {
       await refreshList(sort)
       await selectWord(word)
       if (!r.saved)
-        pushToast({ message: `${word} 已在词库中`, ok: true, retry: false })
+        pushToast({ message: t('alreadyInDict', { word }), ok: true, retry: false })
     } catch (e) {
       pushToast({ message: String(e), ok: false, retry: false })
     }
@@ -216,40 +222,53 @@ export default function App() {
   const handleUpdateNote = async (word: string, note: string) => {
     try {
       await api.updateNote(word, note)
-      pushToast({ message: '备注已保存', ok: true, retry: false })
+      pushToast({ message: t('noteSaved'), ok: true, retry: false })
     } catch (e) {
       pushToast({ message: String(e), ok: false, retry: false })
     }
   }
 
-  /** 请求删除：弹出确认框 */
-  const requestDelete = (word: string) => setPendingDelete(word)
+  /** 执行删除（删除后自动切到最新收录的单词） */
+  const doDelete = async (word: string) => {
+    try {
+      await api.deleteWord(word)
+      const all = await refreshList(sort)
+      // 删除后自动切到最新收录的单词（字母排序时也按“最新添加”取第一个）
+      const newest = sort === 'new' ? all[0] : (await api.listWords('new'))[0]
+      if (newest) {
+        await selectWord(newest.word)
+      } else {
+        setActive(null)
+        setDetail(null)
+      }
+      inputRef.current?.focus()
+      pushToast({ message: t('deleted', { word }), ok: true, retry: false })
+    } catch (e) {
+      pushToast({ message: String(e), ok: false, retry: false })
+    }
+  }
 
-  /** 确认删除 */
+  /** 请求删除：开启确认面板则弹出确认框，否则直接删除 */
+  const requestDelete = (word: string) => {
+    if (settings?.confirmDelete) setPendingDelete(word)
+    else void doDelete(word)
+  }
+
+  /** 确认删除（从确认框触发） */
   const confirmDelete = async () => {
     const word = pendingDelete
     setPendingDelete(null)
     if (!word) return
-    try {
-      await api.deleteWord(word)
-      await refreshList(sort)
-      setActive(null)
-      setDetail(null)
-      inputRef.current?.focus()
-      pushToast({ message: `已删除 ${word}`, ok: true, retry: false })
-    } catch (e) {
-      pushToast({ message: String(e), ok: false, retry: false })
-    }
+    await doDelete(word)
   }
 
   // ---------- 设置 ----------
-  const handleSaveSettings = async (s: Settings) => {
+  // 设置变更即时生效：保存到 DB 并刷新本地状态（不关闭设置窗口，无需“保存”按钮）
+  const handleApplySettings = async (s: Settings) => {
     try {
       await api.saveSettings(s)
       setSettings(s)
       settingsRef.current = s
-      setSettingsOpen(false)
-      pushToast({ message: '设置已保存', ok: true, retry: false })
     } catch (e) {
       pushToast({ message: String(e), ok: false, retry: false })
     }
@@ -258,7 +277,7 @@ export default function App() {
   const handleExport = async () => {
     try {
       const p = await api.exportBackup()
-      pushToast({ message: `已导出备份：${p}`, ok: true, retry: false })
+      pushToast({ message: t('exported', { path: p }), ok: true, retry: false })
     } catch (e) {
       pushToast({ message: String(e), ok: false, retry: false })
     }
@@ -268,7 +287,7 @@ export default function App() {
     try {
       await api.importBackup()
       await refreshList(sort)
-      pushToast({ message: '备份导入成功，列表已刷新', ok: true, retry: false })
+      pushToast({ message: t('imported'), ok: true, retry: false })
     } catch (e) {
       pushToast({ message: String(e), ok: false, retry: false })
     }
@@ -282,6 +301,7 @@ export default function App() {
 
   // ---------- 渲染 ----------
   return (
+    <I18nProvider lang={lang}>
     <div
       className={`app${appFade ? ' fade-in' : ''}${
         focusSide === 'left' ? ' focus-left' : ' focus-right'
@@ -293,23 +313,23 @@ export default function App() {
       <aside className="sidebar">
         <div className="sidebar-head">
           <div className="sidebar-title">
-            📒 生词本
-            <span className="sidebar-count">· {words.length} 词</span>
+            {t('wordbook')}
+            <span className="sidebar-count">{t('wordCount', { n: words.length })}</span>
           </div>
           <div className="sort-row">
-            <span className="sort-label">排序</span>
+            <span className="sort-label">{t('sort')}</span>
             <div className="sort-tabs">
               <button
                 className={sort === 'new' ? 'active' : ''}
                 onClick={() => changeSort('new')}
               >
-                最新添加
+                {t('sortNew')}
               </button>
               <button
                 className={sort === 'alpha' ? 'active' : ''}
                 onClick={() => changeSort('alpha')}
               >
-                字母顺序
+                {t('sortAlpha')}
               </button>
             </div>
           </div>
@@ -321,6 +341,7 @@ export default function App() {
           listRef={wordListRef}
           onMoveRight={() => inputRef.current?.focus()}
           onFocusList={() => setFocusSide('left')}
+          onDelete={requestDelete}
         />
       </aside>
 
@@ -332,7 +353,7 @@ export default function App() {
             <input
               ref={inputRef}
               type="text"
-              placeholder="输入单词 / 释义检索，本地无结果时将走网络查询…"
+              placeholder={t('searchPlaceholder')}
               value={query}
               onChange={(e) => onSearchChange(e.target.value)}
               onFocus={() => setFocusSide('right')}
@@ -365,7 +386,7 @@ export default function App() {
                 }
               }}
             />
-            <button className="clear-btn" title="清除" onClick={clearSearch}>
+            <button className="clear-btn" title={t('clear')} onClick={clearSearch}>
               ✕
             </button>
           </div>
@@ -398,10 +419,10 @@ export default function App() {
             setSettingsOpen(true)
           }}
         >
-          ⚙ 设置
+          {t('settings')}
         </button>
         <button className="fab" onClick={handleSync}>
-          ⟳ 同步
+          {t('sync')}
         </button>
       </div>
 
@@ -410,21 +431,21 @@ export default function App() {
         <div className="overlay show">
           <div className="settings" style={{ width: 360 }}>
             <div className="settings-title" style={{ marginBottom: 10 }}>
-              删除词条
+              {t('deleteTitle')}
             </div>
             <div style={{ marginBottom: 18, fontSize: 13, color: 'var(--muted)' }}>
-              确定删除 <b style={{ color: 'var(--text)' }}>{pendingDelete}</b> 吗？删除后不可恢复。
+              {t('deleteConfirm', { word: pendingDelete })}
             </div>
             <div className="settings-foot">
               <button className="btn btn-ghost" onClick={() => setPendingDelete(null)}>
-                取消
+                {t('cancel')}
               </button>
               <button
                 className="btn btn-primary"
                 style={{ background: 'var(--danger)' }}
                 onClick={confirmDelete}
               >
-                删除
+                {t('delete')}
               </button>
             </div>
           </div>
@@ -437,7 +458,7 @@ export default function App() {
         firstRun={firstRun}
         settings={settings}
         onClose={() => setSettingsOpen(false)}
-        onSave={handleSaveSettings}
+        onSave={handleApplySettings}
         onExport={handleExport}
         onImport={handleImport}
         onSync={handleSync}
@@ -446,5 +467,6 @@ export default function App() {
       {/* Toast */}
       <ToastView toasts={toasts} onRetry={handleSync} />
     </div>
+    </I18nProvider>
   )
 }

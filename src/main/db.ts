@@ -219,7 +219,9 @@ export function loadSettings(): Settings {
     hotkey: 'Ctrl+Alt+T',
     autoSave: true,
     autoSync: true,
-    apiOrder: ['google', 'youdao', 'baidu']
+    apiOrder: ['google', 'youdao', 'baidu'],
+    confirmDelete: false,
+    lang: 'zh'
   }
   const repo = getSetting('repo_url')
   if (repo && repo.trim()) s.repoUrl = repo
@@ -229,6 +231,10 @@ export function loadSettings(): Settings {
   if (autoSave !== undefined) s.autoSave = autoSave === '1'
   const autoSync = getSetting('auto_sync')
   if (autoSync !== undefined) s.autoSync = autoSync === '1'
+  const confirmDelete = getSetting('confirm_delete')
+  if (confirmDelete !== undefined) s.confirmDelete = confirmDelete === '1'
+  const lang = getSetting('lang')
+  if (lang === 'zh' || lang === 'en') s.lang = lang
   const order = getSetting('api_order')
   if (order) {
     try {
@@ -247,5 +253,7 @@ export function saveSettings(s: Settings): void {
   setSetting('hotkey', s.hotkey)
   setSetting('auto_save', s.autoSave ? '1' : '0')
   setSetting('auto_sync', s.autoSync ? '1' : '0')
+  setSetting('confirm_delete', s.confirmDelete ? '1' : '0')
+  setSetting('lang', s.lang)
   setSetting('api_order', JSON.stringify(s.apiOrder))
 }

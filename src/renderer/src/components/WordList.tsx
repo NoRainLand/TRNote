@@ -5,6 +5,7 @@
 import { useEffect } from 'react'
 import type { RefObject } from 'react'
 import type { WordSummary } from '../types'
+import { useT } from '../i18n'
 
 interface Props {
   words: WordSummary[]
@@ -16,9 +17,12 @@ interface Props {
   onMoveRight: () => void
   /** 列表获得焦点时通知 App（用于切换左右栏比例） */
   onFocusList: () => void
+  /** 请求删除指定单词（App 会弹出两步确认） */
+  onDelete: (word: string) => void
 }
 
-export default function WordList({ words, active, onSelect, listRef, onMoveRight, onFocusList }: Props) {
+export default function WordList({ words, active, onSelect, listRef, onMoveRight, onFocusList, onDelete }: Props) {
+  const t = useT()
   // 选中变化时，把高亮项滚动到可视区域（键盘/鼠标均生效）
   useEffect(() => {
     if (!active || !listRef.current) return
@@ -32,11 +36,16 @@ export default function WordList({ words, active, onSelect, listRef, onMoveRight
     listRef.current?.focus()
   }
 
-  // 键盘导航：↑/↓ 移动选中（循环）；→ 切回右侧搜索框
+  // 键盘导航：↑/↓ 移动选中（循环）；→ 切回右侧搜索框；Del 删除当前选中单词
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowRight') {
       e.preventDefault()
       onMoveRight()
+      return
+    }
+    if (e.key === 'Delete') {
+      e.preventDefault()
+      if (active) onDelete(active)
       return
     }
     if (words.length === 0) return
@@ -59,7 +68,7 @@ export default function WordList({ words, active, onSelect, listRef, onMoveRight
         onKeyDown={handleKeyDown}
         onFocus={onFocusList}
       >
-        <div className="empty">还没有生词，去搜索框查一个吧～</div>
+        <div className="empty">{t('emptyList')}</div>
       </div>
     )
   }
